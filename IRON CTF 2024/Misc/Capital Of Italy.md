@@ -1,7 +1,7 @@
-![[Screenshot_20241007_204957.png]]
+!![Screenshot_20241007_204957](../../Screenshot_20241007_204957.png)
 
 For this pyjail challenge, we are given the source code.
-![[Screenshot_20241007_205047.png]]
+!![Screenshot_20241007_205047](../../Screenshot_20241007_205047.png)
 
 We must take note of the following based on the source code:
 1. We don't know the variable name of the flag.
@@ -54,17 +54,17 @@ def main():
 if __name__ == "__main__":
     main()
 ```
-![[Screenshot_20241007_210158.png]]
+!![Screenshot_20241007_210158](../../Screenshot_20241007_210158.png)
 
 Running this script, turns out all printable ascii characters except `(` and `)` are blacklisted.
 
 However, in Python's eval() function, denormalized unicode characters in the input string are converted back to their ASCII character equivalent.  For example, `ｐｒｉｎｔ()` will be converted back to `print()`, let's check if these unicode characters are not blocked.
 
-![[Screenshot_20241007_210659.png]]
+!![Screenshot_20241007_210659](../../Screenshot_20241007_210659.png)
 
 Turns out its not! With this, we can try printing out the values of the variables for the currently running python module, `__main__`,  by inputting `__main__` in the help utility. 
 
-![[Screenshot_20241007_210823.png]]
+!![Screenshot_20241007_210823](../../Screenshot_20241007_210823.png)
 
 And we can see the flag in plainsight, `ironCTF{R0M4N_T1mes}`
 

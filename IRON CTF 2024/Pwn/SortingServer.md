@@ -1,4 +1,4 @@
-![[Screenshot_20241015_153312.png]]
+!![Screenshot_20241015_153312](../../Screenshot_20241015_153312.png)
 
 ---
 ### TL;DR:
@@ -21,7 +21,7 @@ For this challenge, we were provided with a zip file containing the following:
 ```
 
 We started by running `pwn checksec` on the binary to assess its security features:
-![[Screenshot_20241015_153510.png]]
+!![Screenshot_20241015_153510](../../Screenshot_20241015_153510.png)
 
 As seen, the binary has stack canaries, NX, and PIE enabled—important considerations for our exploitation.
 
@@ -29,11 +29,11 @@ As seen, the binary has stack canaries, NX, and PIE enabled—important consider
 ### Initial Interaction with the Program
 
 Running the binary revealed that it sets up a server listening on port 1337 and accepts TCP connections:
-![[Screenshot_20241015_153728.png]]
-![[Screenshot_20241015_153833.png]]
+!![Screenshot_20241015_153728](../../Screenshot_20241015_153728.png)
+!![Screenshot_20241015_153833](../../Screenshot_20241015_153833.png)
 
 When we connect to the service, we’re asked to input a number of elements, followed by the elements themselves, which are sorted and returned:
-![[Screenshot_20241015_154035.png]]
+!![Screenshot_20241015_154035](../../Screenshot_20241015_154035.png)
 
 ---
 ### Dissecting the Code
@@ -207,7 +207,7 @@ if (100 < size) {
 Interestingly, the program does not check for negative values when asking for the number of elements. If we input a negative number that is beyond the integer range of `short`, it is becomes a positive number due to an **integer underflow** when casting `size` from `int` to `short`. For example, inputting `-65536` results in `size = 0` due to wrapping.
 
 By using a size like `-65536 + n`, where `n` is the actual number of elements we want to input, we can bypass the 100-element limit and achieve a **buffer overflow**.
-![[Screenshot_20241015_162736.png]]
+!![Screenshot_20241015_162736](../../Screenshot_20241015_162736.png)
 
 There's also another consequence of inputting a negative size: the `sort()` function does not sort the elements anymore since, unlike the `for` loop that contains the vulnerability, the loops in the sort function does not cast the `size` variable into `short`.
 
@@ -248,7 +248,7 @@ for i in range(n):
 ```
 
 This allowed us to leak values in the stack:
-![[Screenshot_20241016_073335.png]]
+!![Screenshot_20241016_073335](../../Screenshot_20241016_073335.png)
 
 ---
 ### Leaking libc
@@ -283,14 +283,14 @@ qwords = leak_stack(200)
 ```
 
 This gives us a more readable output:
-![[Screenshot_20241017_075655.png]]
+!![Screenshot_20241017_075655](../../Screenshot_20241017_075655.png)
 
 There are a few interesting values in this leak
 - The value leaked at `0x1c8` is the return address of the `serve()` function
 - The value leaked at `0x1f8` is the value of the stack canary
 - The value leaked at `0x250` is the address of a `__libc_start_main+133` 
 
-![[Screenshot_20241017_080034.png]]
+!![Screenshot_20241017_080034](../../Screenshot_20241017_080034.png)
 
 However, I will only be using the libc leak for our exploitation.
 
@@ -298,11 +298,11 @@ However, I will only be using the libc leak for our exploitation.
 ### Crafting the ROP Chain
 
 With the libc base known, the next step is to finally exploit the binary. In my case, I initially tried spawning a shell using a simple `execve` ROP chain, but it didn't work because the shell actually spawns on the server, not on the client. So what I did is to just print the contents of the `flag.txt` file that's in the same directory as the binary based on the `Dockerfile` provided:
-![[Screenshot_20241016_082908.png]]
+!![Screenshot_20241016_082908](../../Screenshot_20241016_082908.png)
 
 To better understand why we are unable to spawn a shell using a simple `execve` ROP chain, let's analyze how the server interacts with us:
-![[Screenshot_20241016_083111.png]]
-![[Screenshot_20241016_083030.png]]
+!![Screenshot_20241016_083111](../../Screenshot_20241016_083111.png)
+!![Screenshot_20241016_083030](../../Screenshot_20241016_083030.png)
 In calling the `read()` and `write()` functions, the binary uses the `sockfd` as the file descriptor which is returned by the `accept()` call, which is a function that returns a new `sockfd` everytime it accepts a socket connection. This means that if we ever want to print an output to our terminal on client-side, we have to use the corresponding `sockfd` for our connection when calling the `write()` function. 
 
 Luckily for us, we can just reuse the `sockfd` used by the `write()` and `read()` function calls in the `serve()` function prior to returning to our ROP chain. Through dynamic analysis using GDB-GEF, I discovered that the RDI register which contains the value for `sockfd` is not overwritten by any preceding code. To make sure we don't lose this value during our function calls in our ROP chain, we can save this value by writing it to some address in `.bss` section or by copying it to other registers.  
@@ -486,7 +486,7 @@ if __name__ == "__main__":
 ```
 
 After running the exploit for a few minutes, we get this:
-![[Screenshot_20241017_000627.png]]
+!![Screenshot_20241017_000627](../../Screenshot_20241017_000627.png)
 
 Flag: `ironCTF{W3lc0m3_T0_R3m0te_pwn1ng!!!}`
 

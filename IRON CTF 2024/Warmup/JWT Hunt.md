@@ -14,6 +14,6 @@ Secret key
 
 Full: `6yH$#v9Wq3e&Zf8LpRt1%Y4nJ^aPk7Sd2C@mQjUwEbGoIhNy0T!BxlVz5uMKA#Yp`
 
-![[Screenshot_20241007_123407.png]]
+!![Screenshot_20241007_123407](../../Screenshot_20241007_123407.png)
 
 Flag: `ironCTF{W0w_U_R34lly_Kn0w_4_L07_Ab0ut_JWT_3xp10r4710n!}`

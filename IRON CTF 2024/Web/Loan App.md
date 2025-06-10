@@ -1,10 +1,10 @@
-![[Screenshot_20241007_080305.png]]
+!![Screenshot_20241007_080305](../../Screenshot_20241007_080305.png)
 
 For this challenge, we are given the source code of the website.
-![[Screenshot_20241007_114522.png]]
+!![Screenshot_20241007_114522](../../Screenshot_20241007_114522.png)
 
 Looking at the contents of app.py, we can see a couple of endpoins. We find an interesting function.
-![[Screenshot_20241007_114619.png]] This endpoint allows us to have our flag printed
+!![Screenshot_20241007_114619](../../Screenshot_20241007_114619.png) This endpoint allows us to have our flag printed
 
 
 Summary:

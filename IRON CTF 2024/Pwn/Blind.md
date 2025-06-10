@@ -1,15 +1,15 @@
-![[desc.png]]
+!![desc](../../desc.png)
 
 In this challenge, we were not given a copy of the executable, hence the title "Blind," which means we will be doing blind binary exploitation.
 
 After connecting to the service using `netcat`, we are greeted with the following prompt:
-![[Screenshot_20241014_134904.png]]
+!![Screenshot_20241014_134904](../../Screenshot_20241014_134904.png)
 
 Any input entered is echoed back as output:
-![[Screenshot_20241014_134952.png]]
+!![Screenshot_20241014_134952](../../Screenshot_20241014_134952.png)
 
 Since our input is being echoed back at us, I suspected the program might be vulnerable to a format string attack, and sure enough, that was the case. From the leaked value, it's also obvious that the binary is a 64-bit executable.
-![[Screenshot_20241014_135054.png]]
+!![Screenshot_20241014_135054](../../Screenshot_20241014_135054.png)
 
 This is good news because we can perform arbitrary reads and writes using this vulnerability. We can also leak the values in stack using this vulnerability, which could potentially give us more insight into the memory layout of the program.
 
@@ -38,7 +38,7 @@ while i < 256:
 ```
 
 Using this code, I discovered something interesting:
-![[Screenshot_20241014_140043.png]]
+!![Screenshot_20241014_140043](../../Screenshot_20241014_140043.png)
 
 The values leaked at offsets 155 and 157 seem to refer to code in executable memory. This also indicates that there is a memory page starting at `0x400000`, which suggests that the binary is not PIE (Position Independent Executable) because `0x400000` is a common base address for 64-bit non-PIE executables. To gather more information, I decided to leak the memory page, which is possible with the format string vulnerability.
 
@@ -70,7 +70,7 @@ def check_segment(address):
 ```
 
 And I got the following results:
-![[Screenshot_20241014_141212.png]]
+!![Screenshot_20241014_141212](../../Screenshot_20241014_141212.png)
 
 I then dumped all the contents of each memory page using the following code and used multithreading to dump multiple pages at the same time to speed up the process:
 ```python
@@ -123,18 +123,18 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
 ```
 
 At this point, I have a copy of all the memory pages we discovered earlier:
-![[Screenshot_20241014_141604.png]]
+!![Screenshot_20241014_141604](../../Screenshot_20241014_141604.png)
 
 Now that we have a copy of the executable page, `0x400000.dump`, I analyzed it using Cutter, and sure enough, it contains the code for the main loop of the program:
-![[Screenshot_20241014_143449.png]]
+!![Screenshot_20241014_143449](../../Screenshot_20241014_143449.png)
 
 I suspected that this is the main loop because we can see the string of the prompt being used here at `0x004006ee`, and there is a `jmp` instruction at `0x00400751` at loops back to `0x00400713` without any checks or condition.
 
 Using this, we can carefully analyze the program and basically "guess" which libc functions are being called here, and I came up with the following:
-![[Screenshot_20241014_144024.png]]
+!![Screenshot_20241014_144024](../../Screenshot_20241014_144024.png)
 
 We can then check which of the PLT entries these point to by looking at the address pointed to by the call function:
-![[Screenshot_20241014_144209.png]]
+!![Screenshot_20241014_144209](../../Screenshot_20241014_144209.png)
 
 This then gives us the address of the GOT entries for each of these functions, resulting to the following mapping:
 
@@ -144,7 +144,7 @@ This then gives us the address of the GOT entries for each of these functions, r
 | `printf` | `0x400580` | `0x600fe0` |
 | `read`   | `0x400580` | `0x600fe8` |
 We can then use the dump we got from the page, `0x600000` - `0x601000`, to leak the libc addresses of these functions:
-![[Screenshot_20241014_145210.png]]
+!![Screenshot_20241014_145210](../../Screenshot_20241014_145210.png)
 
 | Function | PLT Entry  | GOT Entry  | libc Address     |
 | -------- | ---------- | ---------- | ---------------- |
@@ -153,7 +153,7 @@ We can then use the dump we got from the page, `0x600000` - `0x601000`, to leak 
 | `read`   | `0x400580` | `0x600fe8` | `0x7fa10d265020` |
 
 Using these addresses, we can use a [libc database](https://libc.rip/) to finally determine the libc version that the binary is using:
-![[Screenshot_20241014_145547.png]]
+!![Screenshot_20241014_145547](../../Screenshot_20241014_145547.png)
 
 In my case, I decided to use the first result and it worked, but if it happened that it didn't work, I could easily just download the second one.
 
@@ -192,6 +192,6 @@ send_input(io, "%10000$c")
 io.interactive()
 ```
 
-![[Screenshot_20241014_151836.png]]
+!![Screenshot_20241014_151836](../../Screenshot_20241014_151836.png)
 
 Flag: `ironCTF{Haha_You_Found_me_b1ind}`
